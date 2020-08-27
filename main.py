@@ -21,8 +21,7 @@ while True:
     except IndexError:
         break
 
-def purchaseFreq():
-
+def univariateAnalysis():
     # Searches each item to see who purchased it
     # Creates dictionary of each customer and their number of card swipes
     frequency = {}
@@ -42,8 +41,6 @@ def purchaseFreq():
         else:
             continue
 
-    print('Times each customer swiped their card: ' + str(frequency))
-
     # Frequency of each number of card swipes
     # example: there were 5 people who card swiped 35 times
     graphData = {}
@@ -59,19 +56,11 @@ def purchaseFreq():
     for i in graphData.values():
         numOfCustomers.append(i)
 
-    # Graph creation
-    plt.bar(numOfPurchases, numpy.sqrt(numOfCustomers), label='sqrt(Number Of Customers)')
-    plt.xlabel('Number Of Purchases')
-    plt.ylabel('sqrt(Number Of Customers)')
-    plt.title('Purchase Frequencies')
-    plt.legend()
-    plt.show()
+    f1 = plt.figure(1)
+    plt.title('Number of Purchases')
+    plt.boxplot(numOfPurchases)
 
-    #fig = plt.figure()
-    #plt.boxplot(numOfPurchases)
-    #plt.show()
 
-def recentPurchase():
     recentDatesPerCustomer = {}
     currentDate = 0
     for i in row:
@@ -103,19 +92,11 @@ def recentPurchase():
     for i in recentDateFreq.values():
         numOfCustomers.append(i)
 
-    # Graph creation
-    plt.bar(daysSinceLastPurchase, numOfCustomers, label='Number Of Customers')
-    plt.xlabel('Days Since Last Purchase')
-    plt.ylabel('Number Of Customers')
-    plt.title('Days From Last Purchase')
-    plt.legend()
-    plt.show()
+    f2 = plt.figure(2)
+    plt.title('Days since last purchase')
+    plt.boxplot(daysSinceLastPurchase)
 
-    #fig = plt.figure()
-    #plt.boxplot(daysSinceLastPurchase)
-    #plt.show()
 
-def firstPurchase():
     firstDatesPerCustomer = {}
     for i in row:
         if i[6] != '':
@@ -131,8 +112,6 @@ def firstPurchase():
         numOfDays = currentDate - realDate
         firstDatesPerCustomer[i] = numOfDays.days
 
-    print(firstDatesPerCustomer)
-
     recentDateFreq = {}
     for i in firstDatesPerCustomer:
         recentDateFreq.setdefault(firstDatesPerCustomer[i], 0)
@@ -146,19 +125,11 @@ def firstPurchase():
     for i in recentDateFreq.values():
         numOfCustomers.append(i)
 
-    # Graph creation
-    #plt.bar(daysSinceFirstPurchase, numOfCustomers, label='Number Of Customers')
-    #plt.xlabel('Days Since First Purchase')
-    #plt.ylabel('Number Of Customers')
-    #plt.title('Days From First Purchase')
-    #plt.legend()
-    #plt.show()
-
-    fig = plt.figure()
+    f3 = plt.figure(3)
+    plt.title('Days since first purchase')
     plt.boxplot(daysSinceFirstPurchase)
-    plt.show()
 
-def totalRevenue():
+
     listOfTotalRevenue = {}
     for i in row:
         if (i[0] != '' and i[1] != '' and i[2] != '' and i[3] != ''
@@ -219,13 +190,14 @@ def totalRevenue():
     print('Since the median is much lower than the mean, this tells me the distribution is skewed right.')
 
     # Graph creation
+    f4 = plt.figure(4)
     plt.bar(revenueIndex, numpy.sqrt(revenueValue), label='sqrt(Revenue in $')
     plt.ylabel('sqrt(Revenue in $)')
     plt.title('All Revenues From Each Customer')
     plt.legend()
-    plt.show()
 
-def purchaseFreq_Vs_recentPurchase():
+
+def bivariateAnalysis():
     frequency = {}
     old_invoice = 0
     for i in row:
@@ -254,19 +226,19 @@ def purchaseFreq_Vs_recentPurchase():
             currentDate = i[4]
         else:
             continue
-    currentDate = datetime(2011, 12, 9, 12, 50)
+    currentDate = datetime(2011, 12, 10, 12, 50)
     for i in recentDatesPerCustomer:
         realDate = datetime(*xlrd.xldate_as_tuple(recentDatesPerCustomer[i], 0))
         numOfDays = currentDate - realDate
         recentDatesPerCustomer[i] = numOfDays.days
 
+    f5 = plt.figure(5)
     plt.scatter(numpy.sqrt(list(frequency.values())), numpy.sqrt(list(recentDatesPerCustomer.values())))
     plt.title('Frequency vs Number of days from last purchase')
     plt.xlabel('sqrt(Purchase frequency)')
     plt.ylabel('sqrt(Days since last purchase)')
-    plt.show()
 
-def purchaseFreq_Vs_firstPurchase():
+
     frequency = {}
     old_invoice = 0
     for i in row:
@@ -292,19 +264,19 @@ def purchaseFreq_Vs_firstPurchase():
             firstDatesPerCustomer.setdefault(i[6], i[4])
         else:
             continue
-    currentDate = datetime(2011, 12, 9, 12, 50)
+    currentDate = datetime(2011, 12, 10, 12, 50)
     for i in firstDatesPerCustomer:
         realDate = datetime(*xlrd.xldate_as_tuple(firstDatesPerCustomer[i], 0))
         numOfDays = currentDate - realDate
         firstDatesPerCustomer[i] = numOfDays.days
 
+    f6 = plt.figure(6)
     plt.scatter(numpy.sqrt(list(frequency.values())), numpy.sqrt(list(firstDatesPerCustomer.values())))
     plt.title('Frequency vs Number of days from first purchase')
     plt.xlabel('sqrt(Purchase frequency)')
     plt.ylabel('sqrt(Days since first purchase)')
-    plt.show()
 
-def purchaseFreq_Vs_totalRevenue():
+
     frequency = {}
     old_invoice = 0
     for i in row:
@@ -333,13 +305,13 @@ def purchaseFreq_Vs_totalRevenue():
         else:
             continue
 
+    f7 = plt.figure(7)
     plt.scatter(numpy.sqrt(list(frequency.values())), numpy.sqrt(list(listOfTotalRevenue.values())))
     plt.title('Frequency of purchases vs Money spent')
     plt.xlabel('sqrt(Purchase frequency)')
     plt.ylabel('sqrt(Total revenue)')
-    plt.show()
 
-def recentPurchase_Vs_firstPurchase():
+
     recentDatesPerCustomer = {}
     currentDate = 0
     for i in row:
@@ -352,7 +324,7 @@ def recentPurchase_Vs_firstPurchase():
             currentDate = i[4]
         else:
             continue
-    currentDate = datetime(2011, 12, 9, 12, 50)
+    currentDate = datetime(2011, 12, 10, 12, 50)
     for i in recentDatesPerCustomer:
         realDate = datetime(*xlrd.xldate_as_tuple(recentDatesPerCustomer[i], 0))
         numOfDays = currentDate - realDate
@@ -367,19 +339,19 @@ def recentPurchase_Vs_firstPurchase():
             firstDatesPerCustomer.setdefault(i[6], i[4])
         else:
             continue
-    currentDate = datetime(2011, 12, 9, 12, 50)
+    currentDate = datetime(2011, 12, 10, 12, 50)
     for i in firstDatesPerCustomer:
         realDate = datetime(*xlrd.xldate_as_tuple(firstDatesPerCustomer[i], 0))
         numOfDays = currentDate - realDate
         firstDatesPerCustomer[i] = numOfDays.days
 
+    f8 = plt.figure(8)
     plt.scatter(numpy.sqrt(list(recentDatesPerCustomer.values())), numpy.sqrt(list(firstDatesPerCustomer.values())))
     plt.title('Number of days from last purchase vs Number of days from first purchase')
     plt.xlabel('sqrt(Days since last purchase)')
     plt.ylabel('sqrt(Days since first purchase)')
-    plt.show()
 
-def recentPurchase_Vs_totalRevenue():
+
     recentDatesPerCustomer = {}
     currentDate = 0
     for i in row:
@@ -392,7 +364,7 @@ def recentPurchase_Vs_totalRevenue():
             currentDate = i[4]
         else:
             continue
-    currentDate = datetime(2011, 12, 9, 12, 50)
+    currentDate = datetime(2011, 12, 10, 12, 50)
     for i in recentDatesPerCustomer:
         realDate = datetime(*xlrd.xldate_as_tuple(recentDatesPerCustomer[i], 0))
         numOfDays = currentDate - realDate
@@ -410,13 +382,13 @@ def recentPurchase_Vs_totalRevenue():
         else:
             continue
 
+    f9 = plt.figure(9)
     plt.scatter(numpy.sqrt(list(recentDatesPerCustomer.values())), numpy.sqrt(list(listOfTotalRevenue.values())))
     plt.title('Number of days from last purchase vs Money spent')
     plt.xlabel('sqrt(Days since last purchase)')
     plt.ylabel('sqrt(Money spent)')
-    plt.show()
 
-def firstPurchase_Vs_totalRevenue():
+
     firstDatesPerCustomer = {}
     for i in row:
         if (i[0] != '' and i[1] != '' and i[2] != '' and i[3] != ''
@@ -426,7 +398,7 @@ def firstPurchase_Vs_totalRevenue():
             firstDatesPerCustomer.setdefault(i[6], i[4])
         else:
             continue
-    currentDate = datetime(2011, 12, 9, 12, 50)
+    currentDate = datetime(2011, 12, 10, 12, 50)
     for i in firstDatesPerCustomer:
         realDate = datetime(*xlrd.xldate_as_tuple(firstDatesPerCustomer[i], 0))
         numOfDays = currentDate - realDate
@@ -444,44 +416,15 @@ def firstPurchase_Vs_totalRevenue():
         else:
             continue
 
+    f10 = plt.figure(10)
     plt.scatter(numpy.sqrt(list(firstDatesPerCustomer.values())), numpy.sqrt(list(listOfTotalRevenue.values())))
     plt.title('Number of days from first purchase vs Money spent')
     plt.xlabel('sqrt(Days since first purchase)')
     plt.ylabel('sqrt(Money spent)')
     plt.show()
 
-#---------------------------------------------------------------------------------------------------------------
-# Univariate
 
-#purchaseFreq()
-# Large cluster of customers who have only purchased once.
-# Average customer makes ~30 card swipes.
-# Few outliers with over 100 card swipes.
+univariateAnalysis()
+bivariateAnalysis()
 
-#recentPurchase()
-# Large cluster of customers who made their last purchase in the last 30 days.
-# Average customer has made last purchase in ~175 days.
-
-#firstPurchase()
-# Large cluster of customers who made first purchases in the first 100 days.
-# Average customer made first purchase 205 days ago.
-
-#totalRevenue()
-# Majority of customers spend little money.
-# Quite a few outliers where hundreds of thousands of dollars in revenue.
-
-#---------------------------------------------------------------------------------------------------------------
-# Bivariate
-
-#purchaseFreq_Vs_recentPurchase()
-# Higher purchase frequency is generally associated with a lower number of days from the most recent purchase
-#purchaseFreq_Vs_firstPurchase()
-# Higher number of days from first purchase is associated with a higher purchase frequency
-#purchaseFreq_Vs_totalRevenue()
-# The higher the purchase frequency the higher the revenue
-#recentPurchase_Vs_firstPurchase()
-# Not much to explain
-#recentPurchase_Vs_totalRevenue()
-# Those with a higher number of days from recent purchase have a lower revenue
-#firstPurchase_Vs_totalRevenue()
-# Those who have a higher number of days from their first purchase have a higher revenue
+#Final notes: find best fit line/curve in bivariates
