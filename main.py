@@ -3,6 +3,8 @@ import numpy
 import matplotlib.pyplot as plt
 from datetime import datetime
 
+# Program may take up to 1 min to run
+
 # Give the location of the file
 loc = ('Online Retail.xlsx')
 
@@ -29,7 +31,8 @@ def univariateAnalysis():
     for i in row:
         new_invoice = i[0]
         if old_invoice != new_invoice:
-            if i[6] != '':
+            if (i[0] != '' and i[1] != '' and i[2] != '' and i[3] != ''
+                    and i[4] != '' and i[5] != '' and i[6] != '' and i[7] != ''):
                 # Leaves out missing values
                 # Disregards creating empty ID key named ''
                 frequency.setdefault(i[6], 0)
@@ -60,13 +63,18 @@ def univariateAnalysis():
     plt.title('Number of Purchases')
     plt.boxplot(numOfPurchases)
 
+    f2 = plt.figure(2)
+    plt.bar(numOfPurchases, numpy.sqrt(numOfCustomers), label='sqrt(Number Of Customers)')
+    plt.xlabel('Number Of Purchases')
+    plt.ylabel('sqrt(Number Of Customers)')
+    plt.title('Purchase Frequencies')
 
     recentDatesPerCustomer = {}
     currentDate = 0
     for i in row:
-        if i[6] != '':
+        if (i[0] != '' and i[1] != '' and i[2] != '' and i[3] != ''
+                and i[4] != '' and i[5] != '' and i[6] != '' and i[7] != ''):
             # Leaves out missing values
-            # Disregards creating empty ID key named ''
             recentDatesPerCustomer.setdefault(i[6], 0)
             recentDatesPerCustomer[i[6]] = i[4]
             currentDate = i[4]
@@ -92,16 +100,22 @@ def univariateAnalysis():
     for i in recentDateFreq.values():
         numOfCustomers.append(i)
 
-    f2 = plt.figure(2)
+    f3 = plt.figure(3)
     plt.title('Days since last purchase')
     plt.boxplot(daysSinceLastPurchase)
+
+    f4 = plt.figure(4)
+    plt.bar(daysSinceLastPurchase, numOfCustomers, label='Number Of Customers')
+    plt.xlabel('Days Since Last Purchase')
+    plt.ylabel('Number Of Customers')
+    plt.title('Days From Last Purchase')
 
 
     firstDatesPerCustomer = {}
     for i in row:
-        if i[6] != '':
+        if (i[0] != '' and i[1] != '' and i[2] != '' and i[3] != ''
+                and i[4] != '' and i[5] != '' and i[6] != '' and i[7] != ''):
             # Leaves out missing values
-            # Disregards creating empty ID key named ''
             firstDatesPerCustomer.setdefault(i[6], i[4])
         else:
             continue
@@ -125,9 +139,15 @@ def univariateAnalysis():
     for i in recentDateFreq.values():
         numOfCustomers.append(i)
 
-    f3 = plt.figure(3)
+    f5 = plt.figure(5)
     plt.title('Days since first purchase')
     plt.boxplot(daysSinceFirstPurchase)
+
+    f6 = plt.figure(6)
+    plt.bar(daysSinceFirstPurchase, numOfCustomers, label='Number Of Customers')
+    plt.xlabel('Days Since First Purchase')
+    plt.ylabel('Number Of Customers')
+    plt.title('Days From First Purchase')
 
 
     listOfTotalRevenue = {}
@@ -152,6 +172,7 @@ def univariateAnalysis():
     sumOfRevenue = sum(revenueIndexDict.values())
     n = 0
     numOfCustomers = 0
+    print('For revenue of customers:')
     while n <= 0.05*sumOfRevenue:
         n += revenueIndexDict[numOfCustomers]
         numOfCustomers += 1
@@ -189,8 +210,7 @@ def univariateAnalysis():
     print('Median is ' + str(median))
     print('Since the median is much lower than the mean, this tells me the distribution is skewed right.')
 
-    # Graph creation
-    f4 = plt.figure(4)
+    f7 = plt.figure(7)
     plt.bar(revenueIndex, numpy.sqrt(revenueValue), label='sqrt(Revenue in $')
     plt.ylabel('sqrt(Revenue in $)')
     plt.title('All Revenues From Each Customer')
@@ -220,7 +240,6 @@ def bivariateAnalysis():
         if (i[0] != '' and i[1] != '' and i[2] != '' and i[3] != ''
                 and i[4] != '' and i[5] != '' and i[6] != '' and i[7] != ''):
             # Leaves out missing values
-            # Disregards creating empty ID key named ''
             recentDatesPerCustomer.setdefault(i[6], 0)
             recentDatesPerCustomer[i[6]] = i[4]
             currentDate = i[4]
@@ -232,7 +251,7 @@ def bivariateAnalysis():
         numOfDays = currentDate - realDate
         recentDatesPerCustomer[i] = numOfDays.days
 
-    f5 = plt.figure(5)
+    f8 = plt.figure(8)
     plt.scatter(numpy.sqrt(list(frequency.values())), numpy.sqrt(list(recentDatesPerCustomer.values())))
     plt.title('Frequency vs Number of days from last purchase')
     plt.xlabel('sqrt(Purchase frequency)')
@@ -260,7 +279,6 @@ def bivariateAnalysis():
         if (i[0] != '' and i[1] != '' and i[2] != '' and i[3] != ''
                 and i[4] != '' and i[5] != '' and i[6] != '' and i[7] != ''):
             # Leaves out missing values
-            # Disregards creating empty ID key named ''
             firstDatesPerCustomer.setdefault(i[6], i[4])
         else:
             continue
@@ -270,7 +288,7 @@ def bivariateAnalysis():
         numOfDays = currentDate - realDate
         firstDatesPerCustomer[i] = numOfDays.days
 
-    f6 = plt.figure(6)
+    f9 = plt.figure(9)
     plt.scatter(numpy.sqrt(list(frequency.values())), numpy.sqrt(list(firstDatesPerCustomer.values())))
     plt.title('Frequency vs Number of days from first purchase')
     plt.xlabel('sqrt(Purchase frequency)')
@@ -305,7 +323,7 @@ def bivariateAnalysis():
         else:
             continue
 
-    f7 = plt.figure(7)
+    f10 = plt.figure(10)
     plt.scatter(numpy.sqrt(list(frequency.values())), numpy.sqrt(list(listOfTotalRevenue.values())))
     plt.title('Frequency of purchases vs Money spent')
     plt.xlabel('sqrt(Purchase frequency)')
@@ -318,7 +336,6 @@ def bivariateAnalysis():
         if (i[0] != '' and i[1] != '' and i[2] != '' and i[3] != ''
                 and i[4] != '' and i[5] != '' and i[6] != '' and i[7] != ''):
             # Leaves out missing values
-            # Disregards creating empty ID key named ''
             recentDatesPerCustomer.setdefault(i[6], 0)
             recentDatesPerCustomer[i[6]] = i[4]
             currentDate = i[4]
@@ -335,7 +352,6 @@ def bivariateAnalysis():
         if (i[0] != '' and i[1] != '' and i[2] != '' and i[3] != ''
                 and i[4] != '' and i[5] != '' and i[6] != '' and i[7] != ''):
             # Leaves out missing values
-            # Disregards creating empty ID key named ''
             firstDatesPerCustomer.setdefault(i[6], i[4])
         else:
             continue
@@ -345,7 +361,7 @@ def bivariateAnalysis():
         numOfDays = currentDate - realDate
         firstDatesPerCustomer[i] = numOfDays.days
 
-    f8 = plt.figure(8)
+    f11 = plt.figure(11)
     plt.scatter(numpy.sqrt(list(recentDatesPerCustomer.values())), numpy.sqrt(list(firstDatesPerCustomer.values())))
     plt.title('Number of days from last purchase vs Number of days from first purchase')
     plt.xlabel('sqrt(Days since last purchase)')
@@ -358,7 +374,6 @@ def bivariateAnalysis():
         if (i[0] != '' and i[1] != '' and i[2] != '' and i[3] != ''
                 and i[4] != '' and i[5] != '' and i[6] != '' and i[7] != ''):
             # Leaves out missing values
-            # Disregards creating empty ID key named ''
             recentDatesPerCustomer.setdefault(i[6], 0)
             recentDatesPerCustomer[i[6]] = i[4]
             currentDate = i[4]
@@ -382,7 +397,7 @@ def bivariateAnalysis():
         else:
             continue
 
-    f9 = plt.figure(9)
+    f12 = plt.figure(12)
     plt.scatter(numpy.sqrt(list(recentDatesPerCustomer.values())), numpy.sqrt(list(listOfTotalRevenue.values())))
     plt.title('Number of days from last purchase vs Money spent')
     plt.xlabel('sqrt(Days since last purchase)')
@@ -394,7 +409,6 @@ def bivariateAnalysis():
         if (i[0] != '' and i[1] != '' and i[2] != '' and i[3] != ''
                 and i[4] != '' and i[5] != '' and i[6] != '' and i[7] != ''):
             # Leaves out missing values
-            # Disregards creating empty ID key named ''
             firstDatesPerCustomer.setdefault(i[6], i[4])
         else:
             continue
@@ -416,7 +430,7 @@ def bivariateAnalysis():
         else:
             continue
 
-    f10 = plt.figure(10)
+    f13 = plt.figure(13)
     plt.scatter(numpy.sqrt(list(firstDatesPerCustomer.values())), numpy.sqrt(list(listOfTotalRevenue.values())))
     plt.title('Number of days from first purchase vs Money spent')
     plt.xlabel('sqrt(Days since first purchase)')
@@ -424,7 +438,7 @@ def bivariateAnalysis():
     plt.show()
 
 
-univariateAnalysis()
-bivariateAnalysis()
-
-#Final notes: find best fit line/curve in bivariates
+#Functions
+univariateAnalysis() #Runs univariate
+bivariateAnalysis() #Runs bivariate
+# Many graphs will be displayed upon running
