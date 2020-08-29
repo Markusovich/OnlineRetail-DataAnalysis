@@ -24,11 +24,14 @@ while True:
         break
 
 def univariateAnalysis():
+    deleted = 0
+    total = 0
     # Searches each item to see who purchased it
     # Creates dictionary of each customer and their number of card swipes
     frequency = {}
     old_invoice = 0
     for i in row:
+        total += 1
         new_invoice = i[0]
         if old_invoice != new_invoice:
             if (i[0] != '' and i[1] != '' and i[2] != '' and i[3] != ''
@@ -40,6 +43,7 @@ def univariateAnalysis():
                 old_invoice = new_invoice
             else:
                 old_invoice = new_invoice
+                deleted += 1
                 continue
         else:
             continue
@@ -200,15 +204,12 @@ def univariateAnalysis():
         revenueIndex.append(i)
         revenueValue.append(revenueIndexDict[i])
 
-    print('Mean is ' + str(sumOfRevenue/len(revenueValue)))
     if len(revenueValue) % 2 == 0:
         median1 = revenueValue[len(revenueValue) // 2]
         median2 = revenueValue[len(revenueValue) // 2 - 1]
         median = (median1 + median2) / 2
     else:
         median = revenueValue[len(revenueValue) // 2]
-    print('Median is ' + str(median))
-    print('Since the median is much lower than the mean, this tells me the distribution is skewed right.')
 
     f7 = plt.figure(7)
     plt.bar(revenueIndex, numpy.sqrt(revenueValue), label='sqrt(Revenue in $')
