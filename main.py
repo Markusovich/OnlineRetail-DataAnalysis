@@ -49,44 +49,46 @@ data['Days From First Purchase'] = data['Days From First Purchase'] / np.timedel
 #data['Number Of Purchases'] = np.log10(data['Number Of Purchases'])
 
 # Randomizes rows so that they are not ordered by the customer ID numbers
-data = data.sample(frac=1).reset_index(drop=True)
+data = data.sample(frac=1).reset_index(drop=False)
 
 # Removes row between headers and data
 data.columns = data.columns.droplevel(1)
 
-# Stores modified dataframe in new file
-data.to_csv('Clean Data.csv', index=True)
-
-# Profile Report
-#prof = ProfileReport(data)
-#prof.to_file(output_file='output.html')
-
 # Define number of clusters we want
-Kmean = KMeans(n_clusters=5)
 # We will find the number of clusters specified in a 4d space (4 variables)
-Kmean.fit(data)
+Kmean = KMeans(n_clusters=5)
+# Cluster based on the select columns
+Kmean.fit(data[['Number Of Purchases', 'Days From Last Purchase', 'Days From First Purchase', 'Total Revenue']])
 
+# Get centers for each cluster
 print('Mean of each cluster:')
 print(Kmean.cluster_centers_)
 
-# Testing clustering
-#print(Kmean.predict(np.array([173, 246, 295, 306]).reshape(1, -1)))
-#print(Kmean.predict(np.array([7436, 2, 357, 10674]).reshape(1, -1)))
-#print(Kmean.predict(np.array([236, 281, 281, 348]).reshape(1, -1)))
+# Find which cluster each customer belongs to based off select columns
+data['Cluster Category'] = pd.Series(Kmean.predict(data[['Number Of Purchases', 'Days From Last Purchase', 'Days From First Purchase', 'Total Revenue']]._get_numeric_data().dropna(axis=1)), index=data.index)
 
-# determine k using elbow method
+# Profile Report
+prof = ProfileReport(data)
+prof.to_file(output_file='output.html')
+
+# Stores modified dataframe in new file
+data.to_csv('Clean Data.csv', index=True)
+
+# ############################## #
+# determine k using elbow method #
+# ############################## #
 # k means determine k
 # ideal number of clusters is 5 according to the elbow of the graph
-distortions = []
-K = range(1, 10)
-for k in K:
-    kmeanModel = KMeans(n_clusters=k).fit(data)
-    kmeanModel.fit(data)
-    distortions.append(sum(np.min(cdist(data, kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / data.shape[0])
+#distortions = []
+#K = range(1, 10)
+#for k in K:
+#    kmeanModel = KMeans(n_clusters=k).fit(data)
+#    kmeanModel.fit(data)
+#    distortions.append(sum(np.min(cdist(data, kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / data.shape[0])
 
 # Plot the elbow
-plt.plot(K, distortions, 'bx-')
-plt.xlabel('k')
-plt.ylabel('Distortion')
-plt.title('The Elbow Method showing the optimal k')
-plt.show()
+#plt.plot(K, distortions, 'bx-')
+#plt.xlabel('k')
+#plt.ylabel('Distortion')
+#plt.title('The Elbow Method showing the optimal k')
+#plt.show()
