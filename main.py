@@ -45,8 +45,8 @@ data['Days From Last Purchase'] = data['Days From Last Purchase'] / np.timedelta
 data['Days From First Purchase'] = data['Days From First Purchase'] / np.timedelta64(1, 'D')
 
 # Feature engineering, making graphs visualization easier to see
-#data['Total Revenue'] = np.log10(data['Total Revenue'])
-#data['Number Of Purchases'] = np.log10(data['Number Of Purchases'])
+#data['log(Total Revenue)'] = np.log(data['Total Revenue'])
+#data['log(Number Of Purchases)'] = np.log(data['Number Of Purchases'])
 
 # Randomizes rows so that they are not ordered by the customer ID numbers
 data = data.sample(frac=1).reset_index(drop=False)
@@ -56,7 +56,7 @@ data.columns = data.columns.droplevel(1)
 
 # Define number of clusters we want
 # We will find the number of clusters specified in a 4d space (4 variables)
-Kmean = KMeans(n_clusters=5)
+Kmean = KMeans(n_clusters=8)
 # Cluster based on the select columns
 Kmean.fit(data[['Number Of Purchases', 'Days From Last Purchase', 'Days From First Purchase', 'Total Revenue']])
 
@@ -78,13 +78,12 @@ data.to_csv('Clean Data.csv', index=True)
 # determine k using elbow method #
 # ############################## #
 # k means determine k
-# ideal number of clusters is 5 according to the elbow of the graph
 #distortions = []
-#K = range(1, 10)
+#K = range(1, 20)
 #for k in K:
-#    kmeanModel = KMeans(n_clusters=k).fit(data)
-#    kmeanModel.fit(data)
-#    distortions.append(sum(np.min(cdist(data, kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / data.shape[0])
+#    kmeanModel = KMeans(n_clusters=k).fit(data[['Number Of Purchases', 'Days From Last Purchase', 'Days From First Purchase', 'Total Revenue']])
+#    kmeanModel.fit(data[['Number Of Purchases', 'Days From Last Purchase', 'Days From First Purchase', 'Total Revenue']])
+#    distortions.append(sum(np.min(cdist(data[['Number Of Purchases', 'Days From Last Purchase', 'Days From First Purchase', 'Total Revenue']], kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / data.shape[0])
 
 # Plot the elbow
 #plt.plot(K, distortions, 'bx-')
