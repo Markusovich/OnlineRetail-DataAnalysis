@@ -45,8 +45,8 @@ data['Days From Last Purchase'] = data['Days From Last Purchase'] / np.timedelta
 data['Days From First Purchase'] = data['Days From First Purchase'] / np.timedelta64(1, 'D')
 
 # Feature engineering, making graphs visualization easier to see
-data['log(Total Revenue)'] = np.log(data['Total Revenue'])
-data['log(Number Of Purchases)'] = np.log(data['Number Of Purchases'])
+data['sqrt(Total Revenue)'] = np.sqrt(data['Total Revenue'])
+data['sqrt(Number Of Purchases)'] = np.sqrt(data['Number Of Purchases'])
 
 # Randomizes rows so that they are not ordered by the customer ID numbers
 data = data.sample(frac=1).reset_index(drop=False)
@@ -56,26 +56,28 @@ data.columns = data.columns.droplevel(1)
 
 # Define number of clusters we want
 # We will find the number of clusters specified in a 4d space (4 variables)
-Kmean = KMeans(n_clusters=3)
+Kmean = KMeans(n_clusters=5)
 # Cluster based on the select columns
-Kmean.fit(data[['log(Number Of Purchases)', 'Days From Last Purchase', 'Days From First Purchase', 'log(Total Revenue)']])
+Kmean.fit(data[['sqrt(Number Of Purchases)', 'Days From Last Purchase', 'Days From First Purchase', 'sqrt(Total Revenue)']])
 
 # Get centers for each cluster
 print('Mean of each cluster:')
 print(Kmean.cluster_centers_)
 
+
+
 # Find which cluster each customer belongs to based off select columns
-data['Cluster Category'] = pd.Series(Kmean.predict(data[['log(Number Of Purchases)',
+data['Cluster Category'] = pd.Series(Kmean.predict(data[['sqrt(Number Of Purchases)',
                                                          'Days From Last Purchase',
                                                          'Days From First Purchase',
-                                                         'log(Total Revenue)']]._get_numeric_data().dropna(axis=1)),
+                                                         'sqrt(Total Revenue)']]._get_numeric_data().dropna(axis=1)),
                                      index=data.index)
 
 data = data[['CustomerID',
-             'log(Number Of Purchases)',
+             'sqrt(Number Of Purchases)',
              'Days From Last Purchase',
              'Days From First Purchase',
-             'log(Total Revenue)',
+             'sqrt(Total Revenue)',
              'Cluster Category']]
 
 # Profile Report
@@ -89,20 +91,20 @@ data.to_csv('Clean Data.csv', index=True)
 # determine k using elbow method #
 # ############################## #
 # k means determine k
-#distortions = []
-#K = range(1, 10)
-#for k in K:
-#    kmeanModel = KMeans(n_clusters=k).fit(data[['log(Number Of Purchases)', 'Days From Last Purchase',
-#                                                'Days From First Purchase', 'log(Total Revenue)']])
-#    kmeanModel.fit(data[['log(Number Of Purchases)', 'Days From Last Purchase', 'Days From First Purchase',
-#                         'log(Total Revenue)']])
-#    distortions.append(sum(np.min(cdist(data[['log(Number Of Purchases)', 'Days From Last Purchase',
-#                                              'Days From First Purchase', 'log(Total Revenue)']],
-#                                        kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / data.shape[0])
+distortions = []
+K = range(1, 20)
+for k in K:
+    kmeanModel = KMeans(n_clusters=k).fit(data[['sqrt(Number Of Purchases)', 'Days From Last Purchase',
+                                                'Days From First Purchase', 'sqrt(Total Revenue)']])
+    kmeanModel.fit(data[['sqrt(Number Of Purchases)', 'Days From Last Purchase', 'Days From First Purchase',
+                         'sqrt(Total Revenue)']])
+    distortions.append(sum(np.min(cdist(data[['sqrt(Number Of Purchases)', 'Days From Last Purchase',
+                                              'Days From First Purchase', 'sqrt(Total Revenue)']],
+                                        kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / data.shape[0])
 
 # Plot the elbow
-#plt.plot(K, distortions, 'bx-')
-#plt.xlabel('k')
-#plt.ylabel('Distortion')
-#plt.title('The Elbow Method showing the optimal k')
-#plt.show()
+plt.plot(K, distortions, 'bx-')
+plt.xlabel('k')
+plt.ylabel('Distortion')
+plt.title('The Elbow Method showing the optimal k')
+plt.show()
