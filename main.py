@@ -1,3 +1,4 @@
+# Libraries
 import pandas as pd
 import numpy as np
 from pandas_profiling import ProfileReport
@@ -62,9 +63,21 @@ Kmean.fit(data[['sqrt(Number Of Purchases)', 'Days From Last Purchase', 'Days Fr
 
 # Get centers for each cluster
 print('Mean of each cluster:')
+# This algorithm orders the clusters in such fashion that they are always in the same order every run
+for i in range(len(Kmean.cluster_centers_)):
+    min_idx = i
+    for j in range(i + 1, len(Kmean.cluster_centers_)):
+        if Kmean.cluster_centers_[min_idx][3] > Kmean.cluster_centers_[j][3]:
+            min_idx = j
+    Kmean.cluster_centers_[i][3], Kmean.cluster_centers_[min_idx][3] = Kmean.cluster_centers_[min_idx][3], \
+                                                                 Kmean.cluster_centers_[i][3]
+# Printing the array of each mean of each cluster
 print(Kmean.cluster_centers_)
-
-
+# Cluster 0: New customers
+# Cluster 1: Past customers
+# Cluster 2: Loyal customers
+# Cluster 3: Non-frequent customers
+# Cluster 4: High revenue customers
 
 # Find which cluster each customer belongs to based off select columns
 data['Cluster Category'] = pd.Series(Kmean.predict(data[['sqrt(Number Of Purchases)',
@@ -92,7 +105,7 @@ data.to_csv('Clean Data.csv', index=True)
 # ############################## #
 # k means determine k
 distortions = []
-K = range(1, 20)
+K = range(1, 25)
 for k in K:
     kmeanModel = KMeans(n_clusters=k).fit(data[['sqrt(Number Of Purchases)', 'Days From Last Purchase',
                                                 'Days From First Purchase', 'sqrt(Total Revenue)']])
