@@ -57,7 +57,7 @@ data.columns = data.columns.droplevel(1)
 
 # Define number of clusters we want
 # We will find the number of clusters specified in a 4d space (4 variables)
-Kmean = KMeans(n_clusters=5)
+Kmean = KMeans(n_clusters=3)
 # Cluster based on the select columns
 Kmean.fit(data[['sqrt(Number Of Purchases)', 'Days From Last Purchase', 'Days From First Purchase', 'sqrt(Total Revenue)']])
 
@@ -76,8 +76,6 @@ print(Kmean.cluster_centers_)
 # Cluster 0: New customers
 # Cluster 1: Past customers
 # Cluster 2: Loyal customers
-# Cluster 3: Non-frequent customers
-# Cluster 4: High revenue customers
 
 # Find which cluster each customer belongs to based off select columns
 data['Cluster Category'] = pd.Series(Kmean.predict(data[['sqrt(Number Of Purchases)',
@@ -105,7 +103,7 @@ data.to_csv('Clean Data.csv', index=True)
 # ############################## #
 # k means determine k
 distortions = []
-K = range(1, 25)
+K = range(1, 10)
 for k in K:
     kmeanModel = KMeans(n_clusters=k).fit(data[['sqrt(Number Of Purchases)', 'Days From Last Purchase',
                                                 'Days From First Purchase', 'sqrt(Total Revenue)']])
