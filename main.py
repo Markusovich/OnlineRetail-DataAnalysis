@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from pandas_profiling import ProfileReport
 import matplotlib.pyplot as plt
+from scipy.stats import stats
 from sklearn.cluster import KMeans
 from scipy.spatial.distance import cdist
 
@@ -45,9 +46,10 @@ data['Number Of Purchases'] = data['Number Of Purchases'].astype(np.int64)
 data['Days From Last Purchase'] = data['Days From Last Purchase'] / np.timedelta64(1, 'D')
 data['Days From First Purchase'] = data['Days From First Purchase'] / np.timedelta64(1, 'D')
 
-# Feature engineering, making graphs visualization easier to see
-data['sqrt(Total Revenue)'] = np.sqrt(data['Total Revenue'])
-data['sqrt(Number Of Purchases)'] = np.sqrt(data['Number Of Purchases'])
+z_scores = stats.zscore(data)
+abs_z_scores = np.abs(z_scores)
+filtered_entries = (abs_z_scores < 3).all(axis=1)
+data = data[filtered_entries]
 
 # Randomizes rows so that they are not ordered by the customer ID numbers
 data = data.sample(frac=1).reset_index(drop=False)
@@ -59,7 +61,7 @@ data.columns = data.columns.droplevel(1)
 # We will find the number of clusters specified in a 4d space (4 variables)
 Kmean = KMeans(n_clusters=3)
 # Cluster based on the select columns
-Kmean.fit(data[['sqrt(Number Of Purchases)', 'Days From Last Purchase', 'Days From First Purchase', 'sqrt(Total Revenue)']])
+Kmean.fit(data[['Number Of Purchases', 'Days From Last Purchase', 'Days From First Purchase', 'Total Revenue']])
 
 # Get centers for each cluster
 print('Mean of each cluster:')
@@ -73,22 +75,22 @@ for i in range(len(Kmean.cluster_centers_)):
                                                                  Kmean.cluster_centers_[i][3]
 # Printing the array of each mean of each cluster
 print(Kmean.cluster_centers_)
-# Cluster 0: New customers
-# Cluster 1: Past customers
-# Cluster 2: Loyal customers
+# Cluster 0: Low revenue
+# Cluster 1: Loyal customers
+# Cluster 2: High revenue
 
 # Find which cluster each customer belongs to based off select columns
-data['Cluster Category'] = pd.Series(Kmean.predict(data[['sqrt(Number Of Purchases)',
+data['Cluster Category'] = pd.Series(Kmean.predict(data[['Number Of Purchases',
                                                          'Days From Last Purchase',
                                                          'Days From First Purchase',
-                                                         'sqrt(Total Revenue)']]._get_numeric_data().dropna(axis=1)),
+                                                         'Total Revenue']]._get_numeric_data().dropna(axis=1)),
                                      index=data.index)
 
 data = data[['CustomerID',
-             'sqrt(Number Of Purchases)',
+             'Number Of Purchases',
              'Days From Last Purchase',
              'Days From First Purchase',
-             'sqrt(Total Revenue)',
+             'Total Revenue',
              'Cluster Category']]
 
 # Profile Report
@@ -103,14 +105,14 @@ data.to_csv('Clean Data.csv', index=True)
 # ############################## #
 # k means determine k
 distortions = []
-K = range(1, 10)
+K = range(1, 9)
 for k in K:
-    kmeanModel = KMeans(n_clusters=k).fit(data[['sqrt(Number Of Purchases)', 'Days From Last Purchase',
-                                                'Days From First Purchase', 'sqrt(Total Revenue)']])
-    kmeanModel.fit(data[['sqrt(Number Of Purchases)', 'Days From Last Purchase', 'Days From First Purchase',
-                         'sqrt(Total Revenue)']])
-    distortions.append(sum(np.min(cdist(data[['sqrt(Number Of Purchases)', 'Days From Last Purchase',
-                                              'Days From First Purchase', 'sqrt(Total Revenue)']],
+    kmeanModel = KMeans(n_clusters=k).fit(data[['Number Of Purchases', 'Days From Last Purchase',
+                                                'Days From First Purchase', 'Total Revenue']])
+    kmeanModel.fit(data[['Number Of Purchases', 'Days From Last Purchase', 'Days From First Purchase',
+                         'Total Revenue']])
+    distortions.append(sum(np.min(cdist(data[['Number Of Purchases', 'Days From Last Purchase',
+                                              'Days From First Purchase', 'Total Revenue']],
                                         kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / data.shape[0])
 
 # Plot the elbow
