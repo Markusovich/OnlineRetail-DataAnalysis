@@ -1,2 +1,4 @@
-# OnlineRetail-ExploratoryDataAnalysis
-Exploratory Data Analysis on database full of purchases in online retail.
+# OnlineRetail-DataAnalysis
+Data analysis on record of purchases from retail store.
+
+Data prep, descriptive statistics, outliers, correlations, kmeans clustering
