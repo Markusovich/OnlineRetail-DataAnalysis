@@ -91,7 +91,7 @@ print(Kmean.cluster_centers_)
 # Cluster 0: Low spenders
 # Cluster 1: Most loyal customers, 2nd lowest spenders
 # Cluster 2: Above average high revenue
-# Cluster 3: Highest spenders, frequent customers
+# Cluster 3: Highest spenders
 
 # Find which cluster each customer belongs to based off select columns
 # Again, not including the customer id column because its numerical value has no say in the customers habits
