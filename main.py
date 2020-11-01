@@ -56,15 +56,15 @@ data['Number Of Purchases'] = data['Number Of Purchases'].astype(np.int64)
 data['Days From Last Purchase'] = data['Days From Last Purchase'] / np.timedelta64(1, 'D')
 data['Days From First Purchase'] = data['Days From First Purchase'] / np.timedelta64(1, 'D')
 
-# Brings outliers in range, so we do not have to worry about them for the minmax scaler
-data['log(Total Revenue)'] = np.log(data['Total Revenue'])
-data['log(Number Of Purchases)'] = np.log(data['Number Of Purchases'])
-
 # Randomizes rows so that they are not ordered by the customer ID numbers
 data = data.sample(frac=1).reset_index(drop=False)
 
 # Removes row between headers and data
 data.columns = data.columns.droplevel(1)
+
+# Brings outliers in range, so clustering means have a smaller disposition
+data['log(Total Revenue)'] = np.log(data['Total Revenue'])
+data['log(Number Of Purchases)'] = np.log(data['Number Of Purchases'])
 
 # Define number of clusters we want
 # We will find the number of clusters specified in a 4d space (4 variables)
@@ -94,6 +94,7 @@ print('')
 # Find which cluster each customer belongs to based off select columns
 # Again, not including the customer id column because its numerical value has no say in the customers habits
 # Creates new column for each customer noting the cluster they belong to.
+# Establishing the training set
 data['Cluster Category'] = pd.Series(Kmean.predict(data[['log(Number Of Purchases)',
                                                          'Days From Last Purchase',
                                                          'Days From First Purchase',
@@ -101,7 +102,6 @@ data['Cluster Category'] = pd.Series(Kmean.predict(data[['log(Number Of Purchase
                                      index=data.index)
 
 # Reordering of the columns for display
-# Columns are scaled from 0-1
 data = data[['CustomerID',
              'log(Number Of Purchases)',
              'Days From Last Purchase',
@@ -110,32 +110,31 @@ data = data[['CustomerID',
              'Cluster Category']]
 
 # Splitting dataset
+# X_train and y_train will make a pattern where the algorithm can guess what cluster a customer from the testing
+# set belongs to.
+# Again, left out customer id because it does not play a factor in finding the cluster
 X_train, X_test, y_train, y_test = \
     train_test_split(data[['log(Number Of Purchases)',
              'Days From Last Purchase',
              'Days From First Purchase',
              'log(Total Revenue)']], data['Cluster Category'], test_size=0.3, random_state=0)
 
-# Pipeline
-# MaxAbsScaler yielded the best results
-pipeline_randomforest = Pipeline([('scalar', MaxAbsScaler()),
-                     ('pca', PCA()),
-                     ('rf_classifier', RandomForestClassifier())])
-pipeline_randomforest.fit(X_train, y_train)
+pipelineModel = RandomForestClassifier()
+pipelineModel.fit(X_train, y_train)
 
 # The random forest model had the best accuracy out of any other models I tested previously
 print('Testing accuracy: ')
-print(pipeline_randomforest.score(X_test, y_test))
+print(pipelineModel.score(X_test, y_test))
 
 # Sending model to file so that it can be used elsewhere
 from joblib import dump, load
-dump(pipeline_randomforest, 'filename.joblib')
+dump(pipelineModel, 'filename.joblib')
 
 # Use this line of code to load back the model
+#from joblib import dump, load
 #pipeline_randomforest = load('filename.joblib')
 
 # User input, assigns them a cluster based on their features
-numOfPurchases, daysLast, daysFirst, totalRev = 0, 0, 0, 0
 print('Enter customer features')
 print("Number Of Purchases: ")
 numOfPurchases = int(input())
@@ -145,7 +144,7 @@ print("Days From First Purchase: ")
 daysFirst = int(input())
 print("Total Revenue: ")
 totalRev = int(input())
-print('You belong to cluster ' + str(pipeline_randomforest.predict([[np.log(numOfPurchases), daysLast,
+print('You belong to cluster ' + str(pipelineModel.predict([[np.log(numOfPurchases), daysLast,
                                                                      daysFirst, np.log(totalRev)]])[0]))
 
 # Stores modified dataframe in new file
