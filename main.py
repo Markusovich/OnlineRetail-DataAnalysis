@@ -3,9 +3,12 @@ import pandas as pd
 import numpy as np
 from pandas_profiling import ProfileReport
 import matplotlib.pyplot as plt
-from scipy.stats import stats
 from sklearn.cluster import KMeans
-from scipy.spatial.distance import cdist
+from sklearn.decomposition import PCA
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import *
 
 # Import dataset into program
 # dataframe will be designated as 'data'
@@ -14,6 +17,11 @@ data = pd.read_csv('Online Retail.csv', delimiter=',')
 # Removing rows with NaN values, list wise deletion
 # In the near future I may consider a different approach to handling these missing values
 data.dropna(axis=0, inplace=True)
+
+# This functionality enables us to filter rows on specified conditions, removing rows not fit for analytics
+# Another for of list wise deletion
+data = data[(data['Quantity'] > 0)]
+data = data[(data['UnitPrice'] > 0)]
 
 # Makes date more readable and program friendly
 data['InvoiceDate'] = pd.to_datetime(data.InvoiceDate).dt.date
@@ -48,16 +56,9 @@ data['Number Of Purchases'] = data['Number Of Purchases'].astype(np.int64)
 data['Days From Last Purchase'] = data['Days From Last Purchase'] / np.timedelta64(1, 'D')
 data['Days From First Purchase'] = data['Days From First Purchase'] / np.timedelta64(1, 'D')
 
-# This code removes outliers that are 3 standard deviations away from the mean
-# z score is a value assigned to all data points to measure its distance from the mean
-# If the absolute value of the z score is 3 or greater, it is disregarded
-# I chose to implement this code because the extreme outliers were making my cluster means unrealistic
-# If I chose to keep outliers, I would have to consider 10 or more clusters in order to accurately group
-# all the data points. It would be a pain to find a unique name and description for that many clusters.
-z_scores = stats.zscore(data)
-abs_z_scores = np.abs(z_scores)
-filtered_entries = (abs_z_scores < 3).all(axis=1)
-data = data[filtered_entries]
+# Brings outliers in range, so we do not have to worry about them for the minmax scaler
+data['log(Total Revenue)'] = np.log(data['Total Revenue'])
+data['log(Number Of Purchases)'] = np.log(data['Number Of Purchases'])
 
 # Randomizes rows so that they are not ordered by the customer ID numbers
 data = data.sample(frac=1).reset_index(drop=False)
@@ -67,80 +68,112 @@ data.columns = data.columns.droplevel(1)
 
 # Define number of clusters we want
 # We will find the number of clusters specified in a 4d space (4 variables)
-Kmean = KMeans(n_clusters=4)
+Kmean = KMeans(n_clusters=5)
 # Cluster based on the select columns
 # fit function finds the clusters based on the dataframe argument
 # Here, I disregarded customer id as one of the variables to be considered,
 # because their value does not have a known connection to the customers shopping habits.
-Kmean.fit(data[['Number Of Purchases', 'Days From Last Purchase', 'Days From First Purchase', 'Total Revenue']])
-
-# Get centers for each cluster
-print('Mean of each cluster:')
-
-# This algorithm orders the clusters in such fashion that they are always in the same order every run
-for i in range(len(Kmean.cluster_centers_)):
-    min_idx = i
-    for j in range(i + 1, len(Kmean.cluster_centers_)):
-        if Kmean.cluster_centers_[min_idx][3] > Kmean.cluster_centers_[j][3]:
-            min_idx = j
-    Kmean.cluster_centers_[i][3], Kmean.cluster_centers_[min_idx][3] = Kmean.cluster_centers_[min_idx][3], \
-                                                                 Kmean.cluster_centers_[i][3]
+Kmean.fit(data[['log(Number Of Purchases)', 'Days From Last Purchase', 'Days From First Purchase', 'log(Total Revenue)']])
 
 # Printing the array of each mean of each cluster
-print(Kmean.cluster_centers_)
-# Cluster 0: Low spenders
-# Cluster 1: Most loyal customers, 2nd lowest spenders
-# Cluster 2: Above average high revenue
-# Cluster 3: Highest spenders
+i = 0
+for i in range(Kmean.n_clusters):
+    print('Cluster ' + str(i) + ': ')
+    print('log(Number Of Purchases): ' + str(Kmean.cluster_centers_[i][0]))
+    print('Days From Last Purchase: ' + str(Kmean.cluster_centers_[i][1]))
+    print('Days From First Purchase: ' + str(Kmean.cluster_centers_[i][2]))
+    print('log(Total Revenue): ' + str(Kmean.cluster_centers_[i][3]))
+
+# Clusters are: Highest spenders/most loyal customers, very new customers, infrequent customers,
+# high spenders/mostly loyal customers, and former customers/lowest spenders.
+print('')
+print('Clusters are: Highest spenders/most loyal customers, very new customers, infrequent customers '
+      'high spenders/mostly loyal customers, and former customers/lowest spenders.')
+print('')
 
 # Find which cluster each customer belongs to based off select columns
 # Again, not including the customer id column because its numerical value has no say in the customers habits
 # Creates new column for each customer noting the cluster they belong to.
-data['Cluster Category'] = pd.Series(Kmean.predict(data[['Number Of Purchases',
+data['Cluster Category'] = pd.Series(Kmean.predict(data[['log(Number Of Purchases)',
                                                          'Days From Last Purchase',
                                                          'Days From First Purchase',
-                                                         'Total Revenue']]._get_numeric_data().dropna(axis=1)),
+                                                         'log(Total Revenue)']]._get_numeric_data().dropna(axis=1)),
                                      index=data.index)
 
 # Reordering of the columns for display
+# Columns are scaled from 0-1
 data = data[['CustomerID',
-             'Number Of Purchases',
+             'log(Number Of Purchases)',
              'Days From Last Purchase',
              'Days From First Purchase',
-             'Total Revenue',
+             'log(Total Revenue)',
              'Cluster Category']]
 
-# Removes rows with negative stats
-# Does not seem normal for a customer to have a net negative number of purchases
-data = data[(data['Number Of Purchases'] > 0)]
-data = data[(data['Total Revenue'] > 0)]
+# Splitting dataset
+X_train, X_test, y_train, y_test = \
+    train_test_split(data[['log(Number Of Purchases)',
+             'Days From Last Purchase',
+             'Days From First Purchase',
+             'log(Total Revenue)']], data['Cluster Category'], test_size=0.3, random_state=0)
+
+# Pipeline
+# MaxAbsScaler yielded the best results
+pipeline_randomforest = Pipeline([('scalar', MaxAbsScaler()),
+                     ('pca', PCA()),
+                     ('rf_classifier', RandomForestClassifier())])
+pipeline_randomforest.fit(X_train, y_train)
+
+# The random forest model had the best accuracy out of any other models I tested previously
+print('Testing accuracy: ')
+print(pipeline_randomforest.score(X_test, y_test))
+
+# Sending model to file so that it can be used elsewhere
+from joblib import dump, load
+dump(pipeline_randomforest, 'filename.joblib')
+
+# Use this line of code to load back the model
+#pipeline_randomforest = load('filename.joblib')
+
+# User input, assigns them a cluster based on their features
+numOfPurchases, daysLast, daysFirst, totalRev = 0, 0, 0, 0
+print('Enter customer features')
+print("Number Of Purchases: ")
+numOfPurchases = int(input())
+print("Days From Last Purchase: ")
+daysLast = int(input())
+print("Days From First Purchase: ")
+daysFirst = int(input())
+print("Total Revenue: ")
+totalRev = int(input())
+print('You belong to cluster ' + str(pipeline_randomforest.predict([[np.log(numOfPurchases), daysLast,
+                                                                     daysFirst, np.log(totalRev)]])[0]))
+
+# Stores modified dataframe in new file
+data.to_csv('Clean Data.csv', index=True)
 
 # Profile Report
 prof = ProfileReport(data)
 prof.to_file(output_file='output.html')
 
-# Stores modified dataframe in new file
-data.to_csv('Clean Data.csv', index=True)
-
-# Code I stole. Finds optimal k using elbow method.
+# Finds optimal k using elbow method.
 # ############################## #
 # determine k using elbow method #
 # ############################## #
 # k means determine k
-distortions = []
-K = range(1, 10)
-for k in K:
-    kmeanModel = KMeans(n_clusters=k).fit(data[['Number Of Purchases', 'Days From Last Purchase',
-                                                'Days From First Purchase', 'Total Revenue']])
-    kmeanModel.fit(data[['Number Of Purchases', 'Days From Last Purchase', 'Days From First Purchase',
-                         'Total Revenue']])
-    distortions.append(sum(np.min(cdist(data[['Number Of Purchases', 'Days From Last Purchase',
-                                              'Days From First Purchase', 'Total Revenue']],
-                                        kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / data.shape[0])
+#distortions = []
+#K = range(1, 20)
+#for k in K:
+#    kmeanModel = KMeans(n_clusters=k).fit(data[['log(Number Of Purchases)', 'Days From Last Purchase',
+#                                                'Days From First Purchase', 'log(Total Revenue)']])
+#    kmeanModel.fit(data[['log(Number Of Purchases)', 'Days From Last Purchase', 'Days From First Purchase',
+#                         'log(Total Revenue)']])
+#    distortions.append(sum(np.min(cdist(data[['log(Number Of Purchases)', 'Days From Last Purchase',
+#                                              'Days From First Purchase', 'log(Total Revenue)']],
+#                                        kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / data.shape[0])
 
 # Plot the elbow
-plt.plot(K, distortions, 'bx-')
-plt.xlabel('k')
-plt.ylabel('Distortion')
-plt.title('The Elbow Method showing the optimal k')
-plt.show()
+#plt.plot(K, distortions, 'bx-')
+#plt.xlabel('k')
+#plt.ylabel('Distortion')
+#plt.title('The Elbow Method showing the optimal k')
+#plt.show()
