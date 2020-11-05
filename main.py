@@ -2,6 +2,10 @@
 import pandas as pd
 import numpy as np
 from pandas_profiling import ProfileReport
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import MinMaxScaler
 
 # Import dataset into program
 # dataframe will be designated as 'data'
@@ -114,6 +118,21 @@ print("Total Revenue: ")
 totalRev = int(input())
 print('You belong to cluster ' + str(pipelineClustering.predict([[numOfPurchases, daysLast,
                                                                      daysFirst, totalRev]])[0]))
+
+# As a plus, I added some supervised learning
+print('Supervised learning model:')
+X_train, X_test, y_train, y_test = \
+    train_test_split(data[['Number Of Purchases',
+             'Days From Last Purchase',
+             'Days From First Purchase',
+             'Total Revenue']], data['Cluster Category'], test_size=0.3, random_state=0)
+# Pipeline
+pipeline_randomforest = Pipeline([('scalar', MinMaxScaler()), ('rf_classifier', RandomForestClassifier())])
+pipeline_randomforest.fit(X_train, y_train)
+# The random forest model had the best accuracy out of any other models I tested previously
+# Accuracy is between 98-99%
+print('Testing accuracy: ')
+print(pipeline_randomforest.score(X_test, y_test))
 
 # Finds optimal k using elbow method.
 # ############################## #
