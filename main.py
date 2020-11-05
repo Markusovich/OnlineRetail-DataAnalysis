@@ -2,13 +2,6 @@
 import pandas as pd
 import numpy as np
 from pandas_profiling import ProfileReport
-import matplotlib.pyplot as plt
-from scipy.spatial.distance import cdist
-from sklearn.cluster import KMeans
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import *
 
 # Import dataset into program
 # dataframe will be designated as 'data'
@@ -62,11 +55,12 @@ data = data.sample(frac=1).reset_index(drop=False)
 # Removes row between headers and data
 data.columns = data.columns.droplevel(1)
 
-# Pipeline
-# Chose MinMax scalar instead of robust scalar because robust scalar classified outliers as their own cluster
-pipelineClustering = Pipeline([('scaler', MinMaxScaler()), ('kmeans', KMeans(n_clusters=4))])
-# Fitting
-pipelineClustering.fit(data[['Number Of Purchases', 'Days From Last Purchase', 'Days From First Purchase', 'Total Revenue']])
+# Pickled a pipeline where I scale data and then apply kmeans
+# Chose MinMaxScaler as the scalar because we do not want the dataset to revolve around outliers
+# Example: With Robust scalar, most of the non outliers were placed in the low spending cluster, vs minmax
+#scalar had a balanced number of customers in each cluster.
+from joblib import dump, load
+pipelineClustering = load('filename.joblib')
 
 # Printing the array of each mean of each cluster
 for i in range(pipelineClustering['kmeans'].n_clusters):
@@ -83,10 +77,10 @@ print('Clusters are: Highest spenders/most loyal customers, new customers, infre
       'and former customers/lowest spenders.')
 print('')
 
-# Find which cluster each customer belongs to based off select columns
+# Find which cluster each customer belongs to in out dataset
 # Again, not including the customer id column because its numerical value has no say in the customers habits
 # Creates new column for each customer noting the cluster they belong to.
-# Establishing the training set
+# We now have our dataset where each customer has a column for the cluster they belong to
 data['Cluster Category'] = pd.Series(pipelineClustering.predict(data[['Number Of Purchases',
                                                          'Days From Last Purchase',
                                                          'Days From First Purchase',
@@ -108,28 +102,6 @@ data.to_csv('Clean Data.csv', index=True)
 prof = ProfileReport(data)
 prof.to_file(output_file='output.html')
 
-# Training testing split comes before pipeline scaling
-X_train, X_test, y_train, y_test = \
-    train_test_split(data[['Number Of Purchases',
-             'Days From Last Purchase',
-             'Days From First Purchase',
-             'Total Revenue']], data['Cluster Category'], test_size=0.3, random_state=0)
-
-pipelineModel = Pipeline([('scaler', MinMaxScaler()), ('randomforest', RandomForestClassifier())])
-pipelineModel.fit(X_train, y_train)
-
-# The random forest model had the best accuracy out of any other models I tested previously
-print('Testing accuracy: ')
-print(pipelineModel.score(X_test, y_test))
-
-# Sending model to file so that it can be used elsewhere
-from joblib import dump, load
-dump(pipelineModel, 'filename.joblib')
-
-# Use this line of code to load back the model
-#from joblib import dump, load
-#pipeline_randomforest = load('filename.joblib')
-
 # User input, assigns them a cluster based on their features
 print('Enter customer features')
 print("Number Of Purchases: ")
@@ -140,7 +112,7 @@ print("Days From First Purchase: ")
 daysFirst = int(input())
 print("Total Revenue: ")
 totalRev = int(input())
-print('You belong to cluster ' + str(pipelineModel.predict([[numOfPurchases, daysLast,
+print('You belong to cluster ' + str(pipelineClustering.predict([[numOfPurchases, daysLast,
                                                                      daysFirst, totalRev]])[0]))
 
 # Finds optimal k using elbow method.
@@ -148,20 +120,20 @@ print('You belong to cluster ' + str(pipelineModel.predict([[numOfPurchases, day
 # determine k using elbow method #
 # ############################## #
 # k means determine k
-distortions = []
-K = range(1, 20)
-for k in K:
-    kmeanModel = KMeans(n_clusters=k).fit(data[['Number Of Purchases', 'Days From Last Purchase',
-                                                'Days From First Purchase', 'Total Revenue']])
-    kmeanModel.fit(data[['Number Of Purchases', 'Days From Last Purchase', 'Days From First Purchase',
-                         'Total Revenue']])
-    distortions.append(sum(np.min(cdist(data[['Number Of Purchases', 'Days From Last Purchase',
-                                              'Days From First Purchase', 'Total Revenue']],
-                                        kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / data.shape[0])
+#distortions = []
+#K = range(1, 20)
+#for k in K:
+#    kmeanModel = KMeans(n_clusters=k).fit(data[['Number Of Purchases', 'Days From Last Purchase',
+#                                                'Days From First Purchase', 'Total Revenue']])
+#    kmeanModel.fit(data[['Number Of Purchases', 'Days From Last Purchase', 'Days From First Purchase',
+#                         'Total Revenue']])
+#    distortions.append(sum(np.min(cdist(data[['Number Of Purchases', 'Days From Last Purchase',
+#                                              'Days From First Purchase', 'Total Revenue']],
+#                                        kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / data.shape[0])
 
 # Plot the elbow
-plt.plot(K, distortions, 'bx-')
-plt.xlabel('k')
-plt.ylabel('Distortion')
-plt.title('The Elbow Method showing the optimal k')
-plt.show()
+#plt.plot(K, distortions, 'bx-')
+#plt.xlabel('k')
+#plt.ylabel('Distortion')
+#plt.title('The Elbow Method showing the optimal k')
+#plt.show()
