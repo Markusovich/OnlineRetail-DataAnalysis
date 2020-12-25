@@ -11,7 +11,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from scipy import stats
 import matplotlib.pyplot as plt
-'''
+
 # Import dataset into program
 # dataframe will be designated as 'data'
 data = pd.read_csv('Online Retail.csv', delimiter=',')
@@ -76,13 +76,14 @@ data = data[filtered_entries]
 
 # Utilizing pickle code to avoid retraining pipeline every run
 from joblib import dump, load
-#dump(pipelineClustering, 'pipelineClusteringPickle.joblib')
-pipelineClustering = load('pipelineClusteringPickle.joblib')
+#pipelineClustering = load('pipelineClusteringPickle.joblib')
 
 # Not needed because of pickle
-#pipelineClustering = Pipeline([('scalar', MinMaxScaler()), ('kmeans', KMeans(n_clusters=4))])
+pipelineClustering = Pipeline([('scalar', MinMaxScaler(clip=True)), ('kmeans', KMeans(n_clusters=4))])
 # Not needed because of pickle
-#pipelineClustering.fit_transform(data[['Number Of Purchases', 'Days From Last Purchase', 'Days From First Purchase', 'Total Revenue']])
+pipelineClustering.fit_transform(data[['Number Of Purchases', 'Days From Last Purchase', 'Days From First Purchase', 'Total Revenue']])
+
+dump(pipelineClustering, 'pipelineClusteringPickle.joblib')
 
 # This algorithm orders the clusters in such fashion that they are always in the same order every run
 for i in range(len(pipelineClustering['kmeans'].cluster_centers_)):
@@ -111,8 +112,8 @@ data['Cluster Category'] = pd.Series(pipelineClustering.fit_predict(data[['Numbe
                                                          'Total Revenue']]._get_numeric_data().dropna(axis=1)),
                                      index=data.index)
 
-data['Cluster Category'].replace({0: 'New Customer', 1: 'Non-frequent Customer',
-                                  2: 'Loyal Customer', 3: 'High Spender/Loyal Customer'}, inplace=True)
+data['Cluster Category'].replace({1: 'New Customer', 2: 'Non-frequent Customer',
+                                  0: 'Loyal Customer', 3: 'High Spender/Loyal Customer'}, inplace=True)
 
 data = data[['CustomerID',
              'Number Of Purchases',
@@ -153,9 +154,9 @@ def addCustomer(customer: Customer):
     # Utilizing pickle code to avoid retraining pipeline every run
     # dump(model, 'clusterModel.joblib')
     pipelineClustering = load('pipelineClusteringPickle.joblib')
-    clusterDict = {0: 'You belong to the new customer cluster. You most likely show signs of low spending.',
-                   1: 'You belong to the non-frequent buyer cluster. You do not have a long record of shopping.',
-                   2: 'You belong to the loyal buyer cluster. You may have a long record of purchases.',
+    clusterDict = {1: 'You belong to the new customer cluster. You most likely show signs of low spending.',
+                   2: 'You belong to the non-frequent buyer cluster. You do not have a long record of shopping.',
+                   0: 'You belong to the loyal buyer cluster. You may have a long record of purchases.',
                    3: 'You belong to the highest spender cluster. You belong to the category of the highest spenders. '
                       'You also may have a large record, and you shop frequently.'}
     clusterDB.append({'Name': customer.name, 'Category': clusterDict[pipelineClustering.predict([[customer.numOfPurchases, customer.daysLast, customer.daysFirst, customer.totalRev]])[0]]})
@@ -192,4 +193,3 @@ plt.xlabel('k')
 plt.ylabel('Distortion')
 plt.title('The Elbow Method showing the optimal k')
 plt.show()
-'''
