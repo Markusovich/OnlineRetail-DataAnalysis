@@ -1,18 +1,8 @@
 # OnlineRetail-DataAnalysis
 Data analysis on record of purchases from retail store.
 
-Machine learning, kmeans clustering, pipelining, FastAPI, scaling.
+Machine learning, kmeans clustering, pipelining, scaling.
 
-To run FastAPI on localhost, please enter the following commands in the terminal:
+Created a FlaskAPI service for a customer to enter their buyer features and get assigned the category that they belong to.
 
-pip install virtualenv
-
-virtualenv venv
-
-virtualenv venv --system-site-packages
-
-source venv/bin/activate
-
-hypercorn main:app --reload
-
-FastAPI should then run on the localhost.
+Link: https://customer-category-service.herokuapp.com/
