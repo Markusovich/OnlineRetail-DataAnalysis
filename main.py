@@ -75,24 +75,16 @@ outlier_data = data[outlier_entries]
 data = data[filtered_entries]
 
 # Utilizing pickle code to avoid retraining pipeline every run
-from joblib import dump, load
+#from joblib import dump, load
 #pipelineClustering = load('pipelineClusteringPickle.joblib')
 
+starting_points = np.array([[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], np.float64)
 # Not needed because of pickle
-pipelineClustering = Pipeline([('scalar', MinMaxScaler(clip=True)), ('kmeans', KMeans(n_clusters=4))])
+pipelineClustering = Pipeline([('scalar', MinMaxScaler(clip=True)), ('kmeans', KMeans(n_clusters=4, init=starting_points, n_init=1))])
 # Not needed because of pickle
 pipelineClustering.fit_transform(data[['Number Of Purchases', 'Days From Last Purchase', 'Days From First Purchase', 'Total Revenue']])
 
-dump(pipelineClustering, 'pipelineClusteringPickle.joblib')
-
-# This algorithm orders the clusters in such fashion that they are always in the same order every run
-for i in range(len(pipelineClustering['kmeans'].cluster_centers_)):
-    min_idx = i
-    for j in range(i + 1, len(pipelineClustering['kmeans'].cluster_centers_)):
-        if pipelineClustering['kmeans'].cluster_centers_[min_idx][3] > pipelineClustering['kmeans'].cluster_centers_[j][3]:
-            min_idx = j
-    pipelineClustering['kmeans'].cluster_centers_[i][3], pipelineClustering['kmeans'].cluster_centers_[min_idx][3] = pipelineClustering['kmeans'].cluster_centers_[min_idx][3], \
-                                                                 pipelineClustering['kmeans'].cluster_centers_[i][3]
+#dump(pipelineClustering, 'pipelineClusteringPickle.joblib')
 
 # Printing the array of each mean of each cluster
 for i in range(pipelineClustering['kmeans'].n_clusters):
@@ -112,8 +104,10 @@ data['Cluster Category'] = pd.Series(pipelineClustering.fit_predict(data[['Numbe
                                                          'Total Revenue']]._get_numeric_data().dropna(axis=1)),
                                      index=data.index)
 
-data['Cluster Category'].replace({1: 'New Customer', 2: 'Non-frequent Customer',
-                                  0: 'Loyal Customer', 3: 'High Spender/Loyal Customer'}, inplace=True)
+data['Cluster Category'].replace({0: 'New Customer',
+                                  1: 'Loyal Customer',
+                                  2: 'Non-frequent Customer',
+                                  3: 'High Spender/Loyal Customer'}, inplace=True)
 
 data = data[['CustomerID',
              'Number Of Purchases',
@@ -122,14 +116,44 @@ data = data[['CustomerID',
              'Total Revenue',
              'Cluster Category']]
 
-# Stores modified dataframe in new file
-data.to_csv('Clean Data.csv', index=True)
+print(data)
 
+# Stores modified dataframe in new file
+data.to_csv('Clean Data.csv', index=False)
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import MinMaxScaler
+# As a plus, I added some supervised learning
+#print('Supervised learning model:')
+X_train, X_test, y_train, y_test = \
+    train_test_split(data[['Number Of Purchases',
+             'Days From Last Purchase',
+             'Days From First Purchase',
+             'Total Revenue']], data['Cluster Category'], test_size=0.3, random_state=0)
+# Pipeline
+pipeline_randomforest = Pipeline([('scalar', MinMaxScaler()), ('rf_classifier', RandomForestClassifier())])
+pipeline_randomforest.fit(X_train, y_train)
+# The random forest model had the best accuracy out of any other models I tested previously
+# Accuracy is between 98-99%
+#print('Testing accuracy: ')
+#print(pipeline_randomforest.score(X_test, y_test))
+
+#clusterDict = {'New Customer': 'You belong to the new customer cluster. You most likely show signs of low spending.',
+#               'Non-frequent Customer': 'You belong to the non-frequent buyer cluster. You do not have a long record of shopping.',
+#               'Loyal Customer': 'You belong to the loyal buyer cluster. You may have a long record of purchases.',
+#               'High Spender/Loyal Customer': 'You belong to the highest spender cluster. You belong to the category of the highest spenders. '
+#                  'You also may have a large record, and you shop frequently.'}
+
+print(pipeline_randomforest.predict([[0, 0, 0, 0]])[0])
+
+
+'''
 # Profile Report
 prof = ProfileReport(data)
 prof.to_file(output_file='output.html')
 
-'''
 from fastapi import FastAPI
 from pydantic import BaseModel
 from joblib import load
@@ -169,8 +193,8 @@ def seeCustomers():
 @app.get('/customers/{index}')
 def getCustomer(index: int):
     return clusterDB[index-1]
+    
 
-'''
 # Finds optimal k using elbow method.
 # ############################## #
 # determine k using elbow method #
@@ -193,3 +217,4 @@ plt.xlabel('k')
 plt.ylabel('Distortion')
 plt.title('The Elbow Method showing the optimal k')
 plt.show()
+'''
